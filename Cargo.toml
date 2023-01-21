@@ -1,0 +1,10 @@
+[package]
+name = "sect"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0 OR MIT"
+description = "sect is a library for RFC 6962 Certificate Transparency"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
