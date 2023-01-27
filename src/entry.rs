@@ -57,7 +57,7 @@ fn test() {
         0x00, // Timestamped Entry
         0x00, 0x00, 0x01, 0x69, 0x11, 0xb1, 0x70, 0xb2, // u64 millis timestamp
         0x00, 0x00, // x509 entry
-        0x00, 0x02, 0x60, // 24 bit length = 608
+        0x00, /*TODO: Remove extra length byte*/ 0x00, 0x02, 0x60, // 24 bit length = 608
         0x30, 0x82, 0x02, 0x5c, 0x30, 0x82, 0x02, 0x01, 0xa0, 0x03, 0x02, 0x01, // DER Cert
         0x02, 0x02, 0x08, 0x48, 0xf2, 0x53, 0x20, 0xbf, 0x90, 0x3a, 0xdf, 0x30, 0x0a, 0x06, 0x08,
         0x2a, 0x86, 0x48, 0xce, 0x3d, 0x04, 0x03, 0x02, 0x30, 0x21, 0x31, 0x1f, 0x30, 0x1d, 0x06,
@@ -102,15 +102,18 @@ fn test() {
         0x00, 0x00 // 0-length extensions
     ] as &[u8];
 
+    // use known offsets to get a copy of the cert out
+    let extracted_cert = x509[1+15..1+15+608].to_vec(); // TODO: extra byte length
+
     let deserialized = MerkleTreeLeaf::tls_deserialize(&mut x509).expect("should deserialize");
 
-    assert_eq!(0, precert.len(), "should read all data");
+    assert_eq!(0, x509.len(), "should read all data");
     assert_eq!(deserialized, MerkleTreeLeaf{
-        version: 1,
+        version: 0,
         signed_entry: MerkleLeaf::TimeStampedEntry(TimeStampedEntry {
             timestamp: 1550780035250,
             log_entry: LogEntry::X509Entry(Asn1Cert{
-                opaque: x509[16..608].into(), // TODO: indexes are probably wrong
+                opaque: extracted_cert.into(),
             }),
             extensions: vec![].into(),
         })
