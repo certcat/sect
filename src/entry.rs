@@ -9,6 +9,8 @@ struct MerkleTreeLeaf {
 
 #[derive(TlsSerialize, TlsDeserialize, TlsSize, PartialEq, Debug, Clone)]
 #[repr(u8)]
+// MerkleLeaf is the enum MerkleLeafType and data that always follows
+// MerkleLeafType is described in S3.4.
 enum MerkleLeaf {
     #[tls_codec(discriminant = 0)]
     TimeStampedEntry(TimeStampedEntry),
@@ -42,15 +44,16 @@ struct Asn1Cert {
 #[derive(TlsSerialize, TlsDeserialize, TlsSize, PartialEq, Debug, Clone)]
 struct PreCert {
     issuer_key_hash: [u8; 32],
-    tbs_certificate: tls_codec::TlsVecU32<u8>,
+    tbs_certificate: crate::tlsvec24::TlsVec24<u8>,
 }
 
 #[test]
-fn test() {
+fn test_x509_entry_deserialize() {
     use tls_codec::Deserialize;
+    use tls_codec::Serialize;
 
     // https://oak.ct.letsencrypt.org/2022/ct/v1/get-entries?start=5000&end=5000
-    let mut x509 = &[
+    let x509 = &[
         0x00u8, // Version 0
         0x00,   // Timestamped Entry
         0x00, 0x00, 0x01, 0x69, 0x11, 0xb1, 0x70, 0xb2, // u64 millis timestamp
@@ -97,16 +100,17 @@ fn test() {
         0xb5, 0x99, 0xa0, 0x83, 0xa6, 0x98, 0xb1, 0x7f, 0x06, 0xa5, 0x39, 0xdf, 0x3c, 0x0f, 0x77,
         0xd2, 0x83, 0xc5, 0x02, 0x21, 0x00, 0xda, 0x2f, 0x4a, 0xd5, 0x7a, 0x0f, 0x81, 0x33, 0x17,
         0x33, 0x18, 0xab, 0x8d, 0x16, 0x91, 0x8a, 0x01, 0x18, 0x6d, 0xb5, 0xcb, 0x68, 0xb0, 0xc8,
-        0xca, 0x0a, 0xfa, 0x0e, 0x35, 0x0a, 0xf6, 0xd4, // 0-length extensions:
-        0x00, 0x00,
+        0xca, 0x0a, 0xfa, 0x0e, 0x35, 0x0a, 0xf6, 0xd4, // End of cert
+        0x00, 0x00, // 0-length extensions
     ] as &[u8];
 
-    // use known offsets to get a copy of the cert out
-    let extracted_cert = x509[15..15 + 608].to_vec();
+    // use known offsets to get a copy of the cert out of the sample data
+    let extracted_cert = &x509[15..15 + 608];
 
-    let deserialized = MerkleTreeLeaf::tls_deserialize(&mut x509).expect("should deserialize");
+    let mut buf = x509.clone();
+    let deserialized = MerkleTreeLeaf::tls_deserialize(&mut buf).expect("should deserialize");
 
-    assert_eq!(0, x509.len(), "should read all data");
+    assert_eq!(0, buf.len(), "should read all data");
     assert_eq!(
         deserialized,
         MerkleTreeLeaf {
@@ -120,4 +124,11 @@ fn test() {
             })
         }
     );
+
+    let mut buf = Vec::new();
+    let reserialized = deserialized
+        .tls_serialize(&mut buf)
+        .expect("should serialize");
+    assert_eq!(x509.len(), reserialized);
+    assert_eq!(x509, buf.as_slice());
 }
