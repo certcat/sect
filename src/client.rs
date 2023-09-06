@@ -203,3 +203,29 @@ fn test_request_urls() {
         "https://server/prefix/ct/v1/get-entry-and-proof?leaf_index=777&tree_size=7777"
     );
 }
+
+#[test]
+fn test_server_args() {
+    for (server, url) in [
+        ("http://plaintext", "http://plaintext/ct/v1/get-sth"),
+        ("http://plaintext/", "http://plaintext/ct/v1/get-sth"),
+        ("http://plain/2025", "http://plain/2025/ct/v1/get-sth"),
+        ("http://plain/2025/", "http://plain/2025//ct/v1/get-sth"),
+        ("https://https", "https://https/ct/v1/get-sth"),
+        ("https://https/", "https://https/ct/v1/get-sth"),
+        ("https://https/2025", "https://https/2025/ct/v1/get-sth"),
+        ("https://https/2025/", "https://https/2025//ct/v1/get-sth"),
+        ("server", "https://server/ct/v1/get-sth"),
+    ]
+    .iter()
+    {
+        assert_eq!(
+            CT::new(server)
+                .expect("parses")
+                .get_sth_request()
+                .url()
+                .as_str(),
+            *url
+        );
+    }
+}
