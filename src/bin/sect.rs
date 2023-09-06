@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use tokio::main;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -55,39 +56,34 @@ enum Command {
     },
 }
 
-fn main() {
+#[main]
+async fn main() {
     let cli = Cli::parse();
     let server = &cli.server;
 
-    match &cli.command {
-        Command::AddChain { cert_path } => {
-            println!("POST https://{server}/ct/v1/add-chain with data from {cert_path}")
-        }
-        Command::AddPreChain { precert_path } => {
-            println!("POST https://{server}/ct/v1/add-pre-chain with data from {precert_path}")
-        }
-        Command::GetSTH {} => {
-            println!("GET https://{server}/ct/v1/get-sth")
-        }
+    let client = sect::client::CT::new(server).unwrap();
+
+    let resp = match &cli.command {
+        // TODO: need to load PEM from cert_path / precert_path
+        Command::AddChain { cert_path } => client.add_chain(&[]).await,
+        Command::AddPreChain { precert_path } => client.add_pre_chain(&[]).await,
+        Command::GetSTH {} => client.get_sth().await,
         Command::GetSTHConsistency { first, second } => {
-            println!("GET https://{server}/ct/v1/get-sth-consistency?first={first}&second={second}")
+            client.get_sth_consistency(*first, *second).await
         }
         Command::GetProofByHash { hash, tree_size } => {
-            println!(
-                "GET https://{server}/ct/v1/get-proof-by-hash?hash={hash}&tree_size={tree_size}"
-            )
+            client.get_proof_by_hash(hash, *tree_size).await
         }
-        Command::GetEntries { start, end } => {
-            println!("GET https://{server}/ct/v1/get-entries?start={start}&end={end}")
-        }
-        Command::GetRoots {} => {
-            println!("GET https://{server}/ct/v1/get-roots")
-        }
+        Command::GetEntries { start, end } => client.get_entries(*start, *end).await,
+        Command::GetRoots {} => client.get_roots().await,
         Command::GetEntryAndProof {
             leaf_index,
             tree_size,
-        } => {
-            println!("GET https://{server}/ct/v1/get-entry-and-proof?leaf_index={leaf_index}&tree_size={tree_size}")
-        }
+        } => client.get_entry_and_proof(*leaf_index, *tree_size).await,
+    };
+
+    match resp {
+        Err(e) => println!("Error: {e}"),
+        Ok(s) => println!("{s}"),
     }
 }

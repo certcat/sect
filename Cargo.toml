@@ -9,5 +9,9 @@ description = "sect is a library for RFC 6962 Certificate Transparency"
 
 [dependencies]
 clap = { version = "4.4.2", features = ["derive"] }
+reqwest = { version = "0.11.20", default-features = false, features = ["rustls-tls"] }
+thiserror = "1.0.48"
 tls_codec = "0.3.0"
 tls_codec_derive = "0.3.0"
+tokio = { version = "1.32.0", features = ["rt", "rt-multi-thread", "macros"] }
+url = "2.4.1"
