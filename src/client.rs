@@ -216,6 +216,7 @@ fn test_server_args() {
         ("https://https/2025", "https://https/2025/ct/v1/get-sth"),
         ("https://https/2025/", "https://https/2025//ct/v1/get-sth"),
         ("server", "https://server/ct/v1/get-sth"),
+        ("server/", "https://server/ct/v1/get-sth"),
     ]
     .iter()
     {
