@@ -56,6 +56,11 @@ enum Command {
     },
 }
 
+async fn read_certs(path: &str) -> std::io::Result<Vec<Vec<u8>>> {
+    let pem = tokio::fs::read(path).await?;
+    return Ok(rustls_pemfile::certs(&mut pem.as_slice())?);
+}
+
 #[main]
 async fn main() {
     let cli = Cli::parse();
@@ -64,9 +69,22 @@ async fn main() {
     let client = sect::client::CT::new(server).unwrap();
 
     let resp = match &cli.command {
-        // TODO: need to load PEM from cert_path / precert_path
-        Command::AddChain { cert_path } => client.add_chain(&[]).await,
-        Command::AddPreChain { precert_path } => client.add_pre_chain(&[]).await,
+        Command::AddChain { cert_path } => {
+            let certs = read_certs(cert_path).await.expect("reading cert file");
+            match client.add_chain(certs).await {
+              Ok(acr) => Ok(serde_json::to_string_pretty(&acr).unwrap()),
+              Err(e) => Err(e),
+            }
+        }
+        Command::AddPreChain { precert_path } => {
+            let certs = read_certs(precert_path)
+                .await
+                .expect("reading precert file");
+            match client.add_pre_chain(certs).await {
+              Ok(apcr) => Ok(serde_json::to_string_pretty(&apcr).unwrap()),
+              Err(e) => Err(e),
+            }
+        }
         Command::GetSTH {} => client.get_sth().await,
         Command::GetSTHConsistency { first, second } => {
             client.get_sth_consistency(*first, *second).await

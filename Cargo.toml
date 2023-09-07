@@ -8,10 +8,14 @@ description = "sect is a library for RFC 6962 Certificate Transparency"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+base64 = "0.21.3"
 clap = { version = "4.4.2", features = ["derive"] }
-reqwest = { version = "0.11.20", default-features = false, features = ["rustls-tls"] }
+reqwest = { version = "0.11.20", default-features = false, features = ["rustls-tls","json"] }
+rustls-pemfile = "1.0.3"
+serde = { version = "1.0.188", features = ["derive"] }
+serde_json = "1.0.105"
 thiserror = "1.0.48"
 tls_codec = "0.3.0"
 tls_codec_derive = "0.3.0"
-tokio = { version = "1.32.0", features = ["rt", "rt-multi-thread", "macros"] }
+tokio = { version = "1.32.0", features = ["fs", "rt", "rt-multi-thread", "macros"] }
 url = "2.4.1"

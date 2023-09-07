@@ -59,16 +59,35 @@ impl CT {
         return self.client.get(self.ct_url(endpoint));
     }
 
-    pub async fn add_chain(&self, _chain: &[&[u8]]) -> Result<String, Error> {
-        todo!()
-        //let server = &self.server;
-        //println!("POST https://{server}/ct/v1/add-chain")
+    pub async fn add_chain(&self, chain: Vec<Vec<u8>>) -> Result<crate::api::AddChainOutput, Error> {
+        let body = crate::api::AddChainInput { chain: chain };
+        let req = self
+            .client
+            .post(self.ct_url("add-chain"))
+            .json(&body)
+            .build()
+            .expect("request");
+        let resp = self.client.execute(req).await?;
+        if !resp.status().is_success() {
+            return Err(Error::HTTPStatus(resp.status()));
+        }
+         
+        Ok(resp.json().await?)
     }
 
-    pub async fn add_pre_chain(&self, _chain: &[&[u8]]) -> Result<String, Error> {
-        todo!()
-        //let server = &self.server;
-        //println!("POST https://{server}/ct/v1/add-pre-chain")
+    pub async fn add_pre_chain(&self, chain: Vec<Vec<u8>>) -> Result<crate::api::AddPreChainOutput, Error> {
+        let body = crate::api::AddPreChainInput { chain: chain };
+        let req = self
+            .client
+            .post(self.ct_url("add-pre-chain"))
+            .json(&body)
+            .build()
+            .expect("request");
+        let resp = self.client.execute(req).await?;
+        if !resp.status().is_success() {
+            return Err(Error::HTTPStatus(resp.status()));
+        }
+        Ok(resp.json().await?)
     }
 
     pub async fn get_sth(&self) -> Result<String, Error> {
